@@ -11,7 +11,7 @@ namespace BarcodeReader
         {
             List<BarcodeDataModel> masterCollection = new List<BarcodeDataModel>();
             BarcodeDataModel barcodeDataModel = new BarcodeDataModel();
-            string path = @"D:\BarCodeReader\BarcodeReader\마스터파일UTF8.csv";
+            string path = AppDomain.CurrentDomain.BaseDirectory + @"마스터파일UTF8.csv";
             StreamReader sr = new StreamReader(path, System.Text.Encoding.UTF8);
             while (sr.Peek() != -1)
             {

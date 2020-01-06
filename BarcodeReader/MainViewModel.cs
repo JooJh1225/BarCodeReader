@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO.Ports;
 using System.Threading;
@@ -15,10 +14,17 @@ namespace BarcodeReader
         public TextControl textControl = new TextControl();
         public BarcodeDataModel barcode = new BarcodeDataModel();
 
-
         private List<BarcodeDataModel> barcodeDatas = new List<BarcodeDataModel>();
-        private ObservableCollection<BarcodeDataModel> listViewCollection = new ObservableCollection<BarcodeDataModel>();
 
+        private string hidText;
+        private string subHidText;
+        private int portIndex;
+        private int baudrateIndex;
+        private int databitsIndex;
+        private int paritybitsIndex;
+        private int stopbitsindex;
+        private bool dropdownBool;
+        private bool checkBool;
         private string[] port = SerialPort.GetPortNames();
         private List<string> baudRateList = new List<string>()
         {
@@ -58,10 +64,28 @@ namespace BarcodeReader
         private int getDataBits;
         private System.IO.Ports.Parity getparityBits;
         private System.IO.Ports.StopBits getStopBits;
+        private string textBlockBarcodeData;
+        private string textBlockProductName;
 
+        public string HidText
+        {
+            get { return hidText; }
+            set
+            {
+                hidText = value;
+                OnPropertyChangd(nameof(HidText));
+                DataSearch(value);
+            }
+        }
 
+        public int PortIndex { get => portIndex; set { portIndex = value; OnPropertyChangd(nameof(PortIndex)); } }
+        public int BaudrateIndex { get => baudrateIndex; set { baudrateIndex = value; OnPropertyChangd(nameof(BaudrateIndex)); } }
+        public int DatabitsIndex { get => databitsIndex; set { databitsIndex = value; OnPropertyChangd(nameof(DatabitsIndex)); } }
+        public int ParitybitsIndex { get => paritybitsIndex; set { paritybitsIndex = value; OnPropertyChangd(nameof(ParitybitsIndex)); } }
+        public int StopbitsIndex { get => stopbitsindex; set { stopbitsindex = value; OnPropertyChangd(nameof(StopbitsIndex)); } }
+        public bool DropdownBool { get => dropdownBool; set { dropdownBool = value; OnPropertyChangd(nameof(DropdownBool)); } }
+        public bool CheckBool { get => checkBool; set { checkBool = value; OnPropertyChangd(nameof(CheckBool)); } }
         public List<BarcodeDataModel> BarcodeDatas { get => barcodeDatas; set { barcodeDatas = value; OnPropertyChangd(nameof(BarcodeDatas)); } }
-        public ObservableCollection<BarcodeDataModel> ListViewCollection { get => listViewCollection; set { listViewCollection = value; OnPropertyChangd(nameof(ListViewCollection)); } }
         public string[] Port { get => port; set { port = value; OnPropertyChangd(nameof(Port)); } }
         public List<string> BaudRateList { get => baudRateList; set { baudRateList = value; OnPropertyChangd(nameof(BaudRateList)); } }
         public List<int> DataBitsList { get => dataBitsList; set { dataBitsList = value; OnPropertyChangd(nameof(DataBitsList)); } }
@@ -72,15 +96,14 @@ namespace BarcodeReader
         public int GetDataBits { get => getDataBits; set { getDataBits = value; OnPropertyChangd(nameof(GetDataBits)); } }
         public System.IO.Ports.Parity GetparityBits { get => getparityBits; set { getparityBits = value; OnPropertyChangd(nameof(GetparityBits)); } }
         public System.IO.Ports.StopBits GetStopBits { get => getStopBits; set { getStopBits = value; OnPropertyChangd(nameof(GetStopBits)); } }
-
+        public string TextBlockBarcodeData { get => textBlockBarcodeData; set { textBlockBarcodeData = value; OnPropertyChangd(nameof(textBlockBarcodeData)); } }
+        public string TextBlockProductName { get => textBlockProductName; set { textBlockProductName = value; OnPropertyChangd(nameof(TextBlockProductName)); } }
 
         private string productBarcodeData;
         private string receivedData;
 
-
         public string ProductBarcodeData { get => productBarcodeData; set { productBarcodeData = value; OnPropertyChangd(nameof(ProductBarcodeData)); } }
         public string ReceivedData { get => receivedData; set { OnPropertyChangd(nameof(ReceivedData)); receivedData = value; DataSearch(value); } }
-
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -89,10 +112,10 @@ namespace BarcodeReader
 
         public MainViewModel()
         {
-            serial.NewLine = "\r\n";            
+            serial.NewLine = "\r\n";
             serial.DataReceived += new SerialDataReceivedEventHandler(DataReceived);
             Thread thread = new Thread(delegate () { BarcodeDatas = textControl.TxtControl(); });
-            thread.Start();            
+            thread.Start();
         }
 
         public ICommand RunBtnClick { protected get; set; }
@@ -129,24 +152,39 @@ namespace BarcodeReader
 
         private void DataSearch(string data)
         {
+            int x = 0;
             int i = 0;
+            TextBlockBarcodeData = "";
+            TextBlockProductName = "";
             foreach (var items in BarcodeDatas)
             {
-                if ((BarcodeDatas[i].BarcodeData ) == data)
+                if ((BarcodeDatas[i].BarcodeData) == data)
                 {
-                    barcode.BarcodeData = BarcodeDatas[i].BarcodeData;
-                    barcode.ProductName = BarcodeDatas[i].ProductName;
-                    barcode.ProductAmount = BarcodeDatas[i].ProductAmount;
-                    barcode.ProductCost = BarcodeDatas[i].ProductCost;
-                    barcode.ProductListCost = BarcodeDatas[i].ProductListCost;
                     DispatcherService.Invoke((System.Action)(() =>
                     {
-                        ListViewCollection.Add(barcode.Deepcopy());
+                        TextBlockBarcodeData = BarcodeDatas[i].BarcodeData;
+                        TextBlockProductName = BarcodeDatas[i].ProductName;
                     }));
+                    x++;
                 }
                 i++;
             }
+            if (x < 1)
+            {
+                textBlockBarcodeData = "일치하는 바코드가 없습니다";
+                OnPropertyChangd(nameof(textBlockBarcodeData));
+            }
         }
+
+        private DelegateCommand keyStroke;
+
+        public DelegateCommand KeyStroke => keyStroke ?? (keyStroke = new DelegateCommand()
+        {
+            ExecuteAct = (p) =>
+            {
+                DataSearch(HidText);
+            }
+        });
 
         private DelegateCommand cmdOpenMainWindow;
 
@@ -154,16 +192,33 @@ namespace BarcodeReader
         {
             CanExecuteFunc = (p) =>
             {
-                if (GetPort != null && getBaudRate != null)
+                if (CheckBool == false)
                 {
+                    DropdownBool = false;
+                    PortIndex = -1;
+                    BaudrateIndex = -1;
+                    DatabitsIndex = -1;
+                    ParitybitsIndex = -1;
+                    StopbitsIndex = -1;
                     return true;
                 }
-                return false;
-                //return true;
+                else
+                {
+                    bool a = false;
+                    DropdownBool = true;
+                    if (GetPort != null && GetBaudRate != null)
+                    {
+                        a = true;
+                    }
+                    return a;
+                }
             },
             ExecuteAct = (p) =>
             {
-                OpenComPort(GetPort, Convert.ToInt32(getBaudRate), GetDataBits, GetparityBits, GetStopBits);
+                if (CheckBool == true)
+                {
+                    OpenComPort(GetPort, Convert.ToInt32(getBaudRate), GetDataBits, GetparityBits, GetStopBits);
+                }
                 mainWin = new MainWindow();
                 mainWin.DataContext = this;
                 mainWin.Show();
@@ -178,7 +233,10 @@ namespace BarcodeReader
         {
             ExecuteAct = (p) =>
             {
-                serial.Close();
+                if (serial.IsOpen == true)
+                {
+                    serial.Close();
+                }
                 barcodeWin = new BarcodeReaderSet();
                 barcodeWin.DataContext = this;
                 barcodeWin.Show();

@@ -7,8 +7,72 @@
         mc:Ignorable="d"
         WindowStartupLocation="CenterScreen"
         WindowStyle="ToolWindow"
-        Title="BarcodeTester" Height="350" Width="300">
+        Title="BarcodeTester" Height="370" Width="300"
+        MinWidth="300"
+        MinHeight="370">
     <Window.Resources>
+        <Style x:Key="CheckBoxStyle1" TargetType="{x:Type CheckBox}">
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrushKey}}"/>
+            <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <ControlTemplate.Resources>
+                            <Storyboard x:Key="OnChecking">
+                                <DoubleAnimationUsingKeyFrames BeginTime="0" Storyboard.TargetName="slider" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)">
+                                    <SplineDoubleKeyFrame KeyTime="0" Value="25"/>
+                                </DoubleAnimationUsingKeyFrames>
+                            </Storyboard>
+                            <Storyboard x:Key="OnUnchecking">
+                                <DoubleAnimationUsingKeyFrames BeginTime="0" Storyboard.TargetName="slider" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)">
+                                    <SplineDoubleKeyFrame KeyTime="0" Value="0"/>
+                                </DoubleAnimationUsingKeyFrames>
+                                <ThicknessAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="slider" Storyboard.TargetProperty="(FrameworkElement.Margin)">
+                                    <SplineThicknessKeyFrame KeyTime="00:00:00.3000000" Value="1,1,1,1"/>
+                                </ThicknessAnimationUsingKeyFrames>
+                            </Storyboard>
+                        </ControlTemplate.Resources>
+                        <DockPanel x:Name="dockPanel">
+                            <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" Content="{TemplateBinding Content}" ContentStringFormat="{TemplateBinding ContentStringFormat}" ContentTemplate="{TemplateBinding ContentTemplate}" RecognizesAccessKey="True" VerticalAlignment="Center"/>
+                            <Grid Width="45" Background="#FFEAEAEA">
+                                <TextBlock Text="" TextWrapping="Wrap" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right" Margin="0,0,3,0"/>
+                                <TextBlock HorizontalAlignment="Left" Margin="2,0,0,0" FontSize="12" FontWeight="Bold" Text="" TextWrapping="Wrap"/>
+                                <Border HorizontalAlignment="Left" x:Name="slider" Width="23" BorderThickness="1,1,1,1" RenderTransformOrigin="0.5,0.5" >
+                                    <Border.RenderTransform>
+                                        <TransformGroup>
+                                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                            <SkewTransform AngleX="0" AngleY="0"/>
+                                            <RotateTransform Angle="0"/>
+                                            <TranslateTransform X="0" Y="0"/>
+                                        </TransformGroup>
+                                    </Border.RenderTransform>
+                                    <Border.BorderBrush>
+                                        <SolidColorBrush Color="#FFB2B2B2"/>
+                                    </Border.BorderBrush>
+                                    <Border.Background>
+                                        <SolidColorBrush Color="#FFB2B2B2"/>
+                                    </Border.Background>
+                                </Border>
+                            </Grid>
+                        </DockPanel>
+
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard Storyboard="{StaticResource OnUnchecking}" x:Name="OnUnchecking_BeginStoryboard"/>
+                                </Trigger.ExitActions>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard Storyboard="{StaticResource OnChecking}" x:Name="OnChecking_BeginStoryboard"/>
+                                </Trigger.EnterActions>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="MyButtonStyle" TargetType="Button">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Margin" Value="5" />
@@ -16,9 +80,9 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Name="border"
-                            BorderThickness="0,0,0,2"
+                            BorderThickness="0,0,0,3"
                             Padding="4,2"
-                            BorderBrush="#FFEEE5B0"
+                            BorderBrush="#FFB2B2B2"
                             Background="{TemplateBinding Background}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
@@ -44,8 +108,8 @@
              Background="White"
              x:Name="border"
              CornerRadius="0"
-             BorderThickness="0,0,0,2"
-             BorderBrush="#FFEEE5B0">
+             BorderThickness="0,0,0,3"
+             BorderBrush="#FFB2B2B2">
                             <ContentPresenter>
                             </ContentPresenter>
                         </Border>
@@ -60,9 +124,9 @@
                         <Grid>
                             <Border
                CornerRadius="0"
-               BorderThickness="0,0,0,2"
+               BorderThickness="0,0,0,3"
                Background="{TemplateBinding Background}"
-               BorderBrush="#FFEEE5B0">
+               BorderBrush="#FFB2B2B2">
                                 <ScrollViewer x:Name="PART_ContentHost" />
                             </Border>
                         </Grid>
@@ -130,42 +194,53 @@
         </Style>
     </Window.Resources>
     <Grid>
-        <StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <StackPanel Width="90">
-                    <Label Width="80" Height="30" Content="COM Port" FontSize="15" FontWeight="Light" BorderBrush="#FFEEE5B0" Background="White" BorderThickness="0,0,0,2" Margin="0,10,0,0" />
-                    <Label Width="80" Height="30" Content="BaudRate" FontSize="15" FontWeight="Light" BorderBrush="#FFEEE5B0" Background="White" BorderThickness="0,0,0,2" Margin="0,10,0,0" />
-                    <Label Width="80" Height="30" Content="Data Bits" FontSize="15" FontWeight="Light" BorderBrush="#FFEEE5B0" Background="White" BorderThickness="0,0,0,2" Margin="0,10,0,0" />
-                    <Label Width="80" Height="30" Content="Parity Bits" FontSize="15" FontWeight="Light" BorderBrush="#FFEEE5B0" Background="White" BorderThickness="0,0,0,2" Margin="0,10,0,0" />
-                    <Label Width="80" Height="30" Content="Stop Bits" FontSize="15" FontWeight="Light" BorderBrush="#FFEEE5B0" Background="White" BorderThickness="0,0,0,2" Margin="0,10,0,0" />
+        <StackPanel VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <StackPanel>
+                    <Label  HorizontalContentAlignment="Center" Width="80" Height="30" Content="USB-HID" FontSize="15" FontWeight="Light" BorderBrush="#FFB2B2B2" Background="White" BorderThickness="0,0,0,3" Margin="0,10,0,0" />
                 </StackPanel>
-                <StackPanel Width="200">
-                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding Port}" SelectedItem="{Binding GetPort}"
+                <StackPanel Width="60">
+                    <CheckBox HorizontalAlignment="Center" Style="{StaticResource CheckBoxStyle1}" Margin="0,19,0,0" IsChecked="{Binding CheckBool, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel>
+                    <Label HorizontalContentAlignment="Center" Width="80" Height="30" Content="Serial" FontSize="15" FontWeight="Light" BorderBrush="#FFB2B2B2" Background="White" BorderThickness="0,0,0,3" Margin="2,10,0,0" />
+                </StackPanel>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <StackPanel Width="90" HorizontalAlignment="Center">                    
+                    <Label Width="80" Height="30" Content="COM Port" FontSize="15" FontWeight="Light" BorderBrush="#FFB2B2B2" Background="White" BorderThickness="0,0,0,3" Margin="0,10,0,0" />
+                    <Label Width="80" Height="30" Content="BaudRate" FontSize="15" FontWeight="Light" BorderBrush="#FFB2B2B2" Background="White" BorderThickness="0,0,0,3" Margin="0,10,0,0" />
+                    <Label Width="80" Height="30" Content="Data Bits" FontSize="15" FontWeight="Light" BorderBrush="#FFB2B2B2" Background="White" BorderThickness="0,0,0,3" Margin="0,10,0,0" />
+                    <Label Width="80" Height="30" Content="Parity Bits" FontSize="15" FontWeight="Light" BorderBrush="#FFB2B2B2" Background="White" BorderThickness="0,0,0,3" Margin="0,10,0,0" />
+                    <Label Width="80" Height="30" Content="Stop Bits" FontSize="15" FontWeight="Light" BorderBrush="#FFB2B2B2" Background="White" BorderThickness="0,0,0,3" Margin="0,10,0,0" />
+                </StackPanel>
+                <StackPanel Width="200" HorizontalAlignment="Center">
+                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding Port}" SelectedItem="{Binding GetPort}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding PortIndex}"
                               Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
                     </ComboBox>
-                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding BaudRateList}" SelectedItem="{Binding GetBaudRate}"
+                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding BaudRateList, Mode=TwoWay}" SelectedItem="{Binding GetBaudRate}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding BaudrateIndex}"
                               Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
                     </ComboBox>
-                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding DataBitsList}" SelectedItem="{Binding GetDataBits}"
+                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding DataBitsList}" SelectedItem="{Binding GetDataBits}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding DatabitsIndex}"
                               Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
                     </ComboBox>
-                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding ParityBitsList}" SelectedItem="{Binding GetParityBits}"
+                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding ParityBitsList}" SelectedItem="{Binding GetParityBits}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding ParitybitsIndex}"
                               Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
                     </ComboBox>
-                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding StopBitsList}" SelectedItem="{Binding GetStopBits}"
+                    <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding StopBitsList}" SelectedItem="{Binding GetStopBits}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding StopbitsIndex}"
                               Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
-                    </ComboBox>
+                    </ComboBox>                    
                 </StackPanel>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,30,0,0" HorizontalAlignment="Center">
                 <StackPanel Width="150">
                     <Button Style="{StaticResource MyButtonStyle}" Height="30" FontSize="15" Content="Run" Width="105"
                         Command="{Binding CmdOpenMainWindow}" CommandParameter="{Binding ElementName=root}"
-                            HorizontalAlignment="Center" />
+                            HorizontalAlignment="Center" FontWeight="Light" />
                 </StackPanel>
                 <StackPanel Width="150">
                     <Button Style="{StaticResource MyButtonStyle}" Height="30" FontSize="15" Content="Shutdown" Width="105"
-                        Command="{Binding CmdShutDown}" HorizontalAlignment="Center" />
+                        Command="{Binding CmdShutDown}" HorizontalAlignment="Center" FontWeight="Light" />
                 </StackPanel>
             </StackPanel>
         </StackPanel>

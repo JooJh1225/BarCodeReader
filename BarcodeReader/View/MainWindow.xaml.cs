@@ -22,7 +22,15 @@ namespace BarcodeReader
         public MainWindow()
         {
             InitializeComponent();
-            //this.DataContext = new MainViewModel();
+            
+            KeyBinding kb = new KeyBinding();
+            MainViewModel mv = new MainViewModel();
+
+            kb.Command = mv.KeyStroke;
+            kb.Key = Key.Enter;
+
+            Hidtxt.InputBindings.Add(kb);
+            
         }
     }
 }
