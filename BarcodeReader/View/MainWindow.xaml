@@ -8,8 +8,9 @@
         Title="BarcodeTester" Height="768" Width="1024"
         WindowStyle="None"
         WindowState="Normal"
-        x:Name="root">
-    <Window.Resources>
+        x:Name="root"
+        FocusManager.FocusedElement="{Binding ElementName=Hidtxt}">   
+    <Window.Resources>  
         <Style x:Key="MyButtonStyle" TargetType="Button">
             <Setter Property="OverridesDefaultStyle" Value="True" />
             <Setter Property="Margin" Value="5" />
@@ -17,7 +18,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border Name="border"
-                            BorderThickness="0,0,0,2"
+                            BorderThickness="0,0,0,0"
                             Padding="4,2"
                             BorderBrush="Gray"
                             Background="{TemplateBinding Background}">
@@ -36,26 +37,40 @@
                 </Setter.Value>
             </Setter>
         </Style>
- 
+        <Style x:Key="tboxstyle" TargetType="TextBox">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="#FF686868"/>
+                </Trigger>
+                <Trigger Property="IsFocused" Value="True">
+                    <Setter Property="BorderBrush" Value="#FF686868"/>                                     
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
+    <Window.Background>
+        <ImageBrush ImageSource="D:\BarCodeReader\BarcodeReader\Background\Background.png"/>
+    </Window.Background>
     <Grid>        
         <StackPanel>
             <StackPanel Width="1024">
-                <TextBox Width="1024" Height="68" Text="{Binding HidText ,UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" x:Name="Hidtxt"/>
-                <TextBox Width="1024" Height="68" Text="{Binding HidText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+                <StackPanel HorizontalAlignment="Center" Margin="10">
+                    <TextBox Width="600" Height="30" Text="{Binding HidText ,UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" x:Name="e_Hidtxt" TextAlignment="Center" FontSize="16" BorderBrush="#FF686868"/>
+                </StackPanel>                      
                 <StackPanel>
-                    <Border Height="200" Width="1024">
-                        <TextBlock  Text="{Binding TextBlockProductName}" TextWrapping="wrap" FontSize="70" TextAlignment="Center" FontWeight="Light" VerticalAlignment="Center" />
-                    </Border>
-                    <Border Height="200" Width="1024">  
-                        <TextBlock  Text="{Binding TextBlockBarcodeData}" TextWrapping="wrap" FontSize="70" TextAlignment="Center" FontWeight="Light" VerticalAlignment="Center" />
+                    <Border Height="200" Width="1024" Margin="0,100,0,0">
+                        <TextBlock  Text="{Binding TextBlockProductName}" TextWrapping="wrap" FontSize="70" TextAlignment="Center" FontWeight="Light" VerticalAlignment="Center" Foreground="#FF686868" />
                     </Border>                    
-                </StackPanel>               
-            </StackPanel>
-            <StackPanel>
-                <Button Margin="0,150,0,0" Style="{StaticResource MyButtonStyle}" Command="{Binding CmdClosemainWindow}"
+                    <Border Height="200" Width="1024">
+                        <TextBlock  Text="{Binding TextBlockBarcodeData}" TextWrapping="wrap" FontSize="70" TextAlignment="Center" FontWeight="Light" VerticalAlignment="Center" Foreground="#FF686868" />
+                    </Border>                    
+                    <StackPanel>                        
+                        <Image Source="{Binding BarcodeImageSource, UpdateSourceTrigger=PropertyChanged}" Width="700" Height="120"/>
+                        <Button Margin="0,22,0,0" Style="{StaticResource MyButtonStyle}" Command="{Binding CmdClosemainWindow}"
                        Height="68" />
-            </StackPanel>
+                    </StackPanel>                    
+                </StackPanel>               
+            </StackPanel>                          
         </StackPanel>
     </Grid>
 </Window>

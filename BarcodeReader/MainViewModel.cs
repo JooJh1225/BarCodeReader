@@ -5,19 +5,21 @@ using System.IO.Ports;
 using System.Threading;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
+using ZXing;
 
 namespace BarcodeReader
 {
-    internal class MainViewModel : INotifyPropertyChanged
+    class MainViewModel : INotifyPropertyChanged
     {
         public SerialPort serial = new SerialPort();
         public TextControl textControl = new TextControl();
-        public BarcodeDataModel barcode = new BarcodeDataModel();
+        public BarcodeControl barcodeControl = new BarcodeControl();
 
         private List<BarcodeDataModel> barcodeDatas = new List<BarcodeDataModel>();
-
+                
+        private BitmapImage barcodeImageSource;
         private string hidText;
-        private string subHidText;
         private int portIndex;
         private int baudrateIndex;
         private int databitsIndex;
@@ -67,17 +69,8 @@ namespace BarcodeReader
         private string textBlockBarcodeData;
         private string textBlockProductName;
 
-        public string HidText
-        {
-            get { return hidText; }
-            set
-            {
-                hidText = value;
-                OnPropertyChangd(nameof(HidText));
-                DataSearch(value);
-            }
-        }
-
+        public BitmapImage BarcodeImageSource { get => barcodeImageSource; set { barcodeImageSource = value; OnPropertyChangd(nameof(barcodeImageSource)); } }
+        public string HidText { get => hidText; set { hidText = value; OnPropertyChangd(nameof(hidText)); } }
         public int PortIndex { get => portIndex; set { portIndex = value; OnPropertyChangd(nameof(PortIndex)); } }
         public int BaudrateIndex { get => baudrateIndex; set { baudrateIndex = value; OnPropertyChangd(nameof(BaudrateIndex)); } }
         public int DatabitsIndex { get => databitsIndex; set { databitsIndex = value; OnPropertyChangd(nameof(DatabitsIndex)); } }
@@ -103,7 +96,16 @@ namespace BarcodeReader
         private string receivedData;
 
         public string ProductBarcodeData { get => productBarcodeData; set { productBarcodeData = value; OnPropertyChangd(nameof(ProductBarcodeData)); } }
-        public string ReceivedData { get => receivedData; set { OnPropertyChangd(nameof(ReceivedData)); receivedData = value; DataSearch(value); } }
+        public string ReceivedData
+        {
+            get { return receivedData; }
+            set
+            {
+                receivedData = value;
+                OnPropertyChangd(nameof(ReceivedData));
+                DataSearch(value);
+            }
+        }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -112,10 +114,21 @@ namespace BarcodeReader
 
         public MainViewModel()
         {
-            serial.NewLine = "\r\n";
+            CheckBool = true;
+            PortIndex = -1;
+            BaudrateIndex = 5;
+            DatabitsIndex = 3;
+            ParitybitsIndex = 0;
+            StopbitsIndex = 0;
+            serial.NewLine = "\r";            
             serial.DataReceived += new SerialDataReceivedEventHandler(DataReceived);
-            Thread thread = new Thread(delegate () { BarcodeDatas = textControl.TxtControl(); });
+            Thread thread = new Thread(delegate () {
+                //bool = true;
+                BarcodeDatas = textControl.TxtControl();
+                //bool = false;
+            });
             thread.Start();
+            
         }
 
         public ICommand RunBtnClick { protected get; set; }
@@ -150,7 +163,7 @@ namespace BarcodeReader
             }
         }
 
-        private void DataSearch(string data)
+        private int DataSearch(string data)
         {
             int x = 0;
             int i = 0;
@@ -168,24 +181,38 @@ namespace BarcodeReader
                     x++;
                 }
                 i++;
-            }
+            }           
             if (x < 1)
             {
-                textBlockBarcodeData = "일치하는 바코드가 없습니다";
-                OnPropertyChangd(nameof(textBlockBarcodeData));
+                if(data == "")
+                {
+                    TextBlockProductName = null;
+                    TextBlockBarcodeData = null;
+                }
+                else
+                {
+                    TextBlockBarcodeData = "일치하는 바코드가 없습니다";
+                    BarcodeImageSource = null;
+                    OnPropertyChangd(nameof(TextBlockBarcodeData));
+                    OnPropertyChangd(nameof(BarcodeImageSource));
+                }
+                
             }
+            return x;
         }
 
         private DelegateCommand keyStroke;
 
         public DelegateCommand KeyStroke => keyStroke ?? (keyStroke = new DelegateCommand()
         {
+            
             ExecuteAct = (p) =>
             {
-                DataSearch(HidText);
+                DataSearch(HidText);                            
             }
         });
 
+        
         private DelegateCommand cmdOpenMainWindow;
 
         public DelegateCommand CmdOpenMainWindow => cmdOpenMainWindow ?? (cmdOpenMainWindow = new DelegateCommand()
@@ -204,6 +231,11 @@ namespace BarcodeReader
                 }
                 else
                 {
+                    
+                    BaudrateIndex = 5;
+                    DatabitsIndex = 3;
+                    ParitybitsIndex = 0;
+                    StopbitsIndex = 0;
                     bool a = false;
                     DropdownBool = true;
                     if (GetPort != null && GetBaudRate != null)
@@ -224,6 +256,7 @@ namespace BarcodeReader
                 mainWin.Show();
                 barcodeWin?.Close();
                 barcodeWin = null;
+                
             }
         });
 
@@ -231,17 +264,29 @@ namespace BarcodeReader
 
         public DelegateCommand CmdClosemainWindow => cmdClosemainWindow ?? (cmdClosemainWindow = new DelegateCommand()
         {
+            
             ExecuteAct = (p) =>
             {
                 if (serial.IsOpen == true)
                 {
-                    serial.Close();
+                    try
+                    {
+                        serial.Close();
+                    }
+                    catch (System.IO.IOException)
+                    {
+                        MessageBox.Show("장치와의 연결이 끊어졌습니다");
+                    }
+                    
                 }
                 barcodeWin = new BarcodeReaderSet();
                 barcodeWin.DataContext = this;
                 barcodeWin.Show();
                 mainWin?.Close();
                 mainWin = null;
+                TextBlockProductName = null;
+                TextBlockBarcodeData = null;
+                HidText = null;
             }
         });
 
@@ -254,5 +299,7 @@ namespace BarcodeReader
                 App.Current.Shutdown();
             }
         });
+
+       
     }
 }

@@ -18,19 +18,35 @@ namespace BarcodeReader
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window
-    {
+    {       
+
         public MainWindow()
         {
             InitializeComponent();
-            
-            KeyBinding kb = new KeyBinding();
-            MainViewModel mv = new MainViewModel();
 
-            kb.Command = mv.KeyStroke;
-            kb.Key = Key.Enter;
+            this.Loaded += MainWindow_Loaded;
 
-            Hidtxt.InputBindings.Add(kb);
-            
+           
+
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            this.e_Hidtxt.PreviewKeyDown -= E_Hidtxt_PreviewKeyDown;
+            this.e_Hidtxt.PreviewKeyDown += E_Hidtxt_PreviewKeyDown;
+        }
+
+        private void E_Hidtxt_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.Key == Key.Enter)
+            {
+                var vm = this.DataContext as MainViewModel;
+                if(vm != null)
+                {
+                    vm.KeyStroke.Execute(null);
+                    this.e_Hidtxt.SelectAll();
+                }
+            }
         }
     }
 }
