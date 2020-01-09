@@ -7,17 +7,23 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using ZXing;
+using System.Windows.Threading;
+using System.Linq;
 
 namespace BarcodeReader
-{
+{    
     class MainViewModel : INotifyPropertyChanged
     {
         public SerialPort serial = new SerialPort();
         public TextControl textControl = new TextControl();
         public BarcodeControl barcodeControl = new BarcodeControl();
-
+        public DispatcherTimer timer = new DispatcherTimer();        
+        
+        
+        
         private List<BarcodeDataModel> barcodeDatas = new List<BarcodeDataModel>();
-                
+
+        private bool threadBool;
         private BitmapImage barcodeImageSource;
         private string hidText;
         private int portIndex;
@@ -27,7 +33,7 @@ namespace BarcodeReader
         private int stopbitsindex;
         private bool dropdownBool;
         private bool checkBool;
-        private string[] port = SerialPort.GetPortNames();
+        private string[] port;
         private List<string> baudRateList = new List<string>()
         {
             "110",
@@ -68,7 +74,10 @@ namespace BarcodeReader
         private System.IO.Ports.StopBits getStopBits;
         private string textBlockBarcodeData;
         private string textBlockProductName;
+        private string productBarcodeData;
+        private string receivedData;
 
+        public bool ThreadBool { get => threadBool; set { threadBool = value; OnPropertyChangd(nameof(ThreadBool)); } }
         public BitmapImage BarcodeImageSource { get => barcodeImageSource; set { barcodeImageSource = value; OnPropertyChangd(nameof(barcodeImageSource)); } }
         public string HidText { get => hidText; set { hidText = value; OnPropertyChangd(nameof(hidText)); } }
         public int PortIndex { get => portIndex; set { portIndex = value; OnPropertyChangd(nameof(PortIndex)); } }
@@ -79,7 +88,15 @@ namespace BarcodeReader
         public bool DropdownBool { get => dropdownBool; set { dropdownBool = value; OnPropertyChangd(nameof(DropdownBool)); } }
         public bool CheckBool { get => checkBool; set { checkBool = value; OnPropertyChangd(nameof(CheckBool)); } }
         public List<BarcodeDataModel> BarcodeDatas { get => barcodeDatas; set { barcodeDatas = value; OnPropertyChangd(nameof(BarcodeDatas)); } }
-        public string[] Port { get => port; set { port = value; OnPropertyChangd(nameof(Port)); } }
+        public string[] Port
+        {
+            get { return port; }
+            set
+            {
+                port = value;
+                OnPropertyChangd(nameof(Port));
+            }
+        }
         public List<string> BaudRateList { get => baudRateList; set { baudRateList = value; OnPropertyChangd(nameof(BaudRateList)); } }
         public List<int> DataBitsList { get => dataBitsList; set { dataBitsList = value; OnPropertyChangd(nameof(DataBitsList)); } }
         public List<Parity> ParityBitsList { get => parityBitsList; set { parityBitsList = value; OnPropertyChangd(nameof(ParityBitsList)); } }
@@ -90,11 +107,7 @@ namespace BarcodeReader
         public System.IO.Ports.Parity GetparityBits { get => getparityBits; set { getparityBits = value; OnPropertyChangd(nameof(GetparityBits)); } }
         public System.IO.Ports.StopBits GetStopBits { get => getStopBits; set { getStopBits = value; OnPropertyChangd(nameof(GetStopBits)); } }
         public string TextBlockBarcodeData { get => textBlockBarcodeData; set { textBlockBarcodeData = value; OnPropertyChangd(nameof(textBlockBarcodeData)); } }
-        public string TextBlockProductName { get => textBlockProductName; set { textBlockProductName = value; OnPropertyChangd(nameof(TextBlockProductName)); } }
-
-        private string productBarcodeData;
-        private string receivedData;
-
+        public string TextBlockProductName { get => textBlockProductName; set { textBlockProductName = value; OnPropertyChangd(nameof(TextBlockProductName)); } }   
         public string ProductBarcodeData { get => productBarcodeData; set { productBarcodeData = value; OnPropertyChangd(nameof(ProductBarcodeData)); } }
         public string ReceivedData
         {
@@ -105,7 +118,7 @@ namespace BarcodeReader
                 OnPropertyChangd(nameof(ReceivedData));
                 DataSearch(value);
             }
-        }
+        }        
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -114,6 +127,8 @@ namespace BarcodeReader
 
         public MainViewModel()
         {
+            Port = SerialPort.GetPortNames();
+            ThreadBool = false;
             CheckBool = true;
             PortIndex = -1;
             BaudrateIndex = 5;
@@ -122,13 +137,17 @@ namespace BarcodeReader
             StopbitsIndex = 0;
             serial.NewLine = "\r";            
             serial.DataReceived += new SerialDataReceivedEventHandler(DataReceived);
-            Thread thread = new Thread(delegate () {
-                //bool = true;
+            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(delegate
+            {
                 BarcodeDatas = textControl.TxtControl();
-                //bool = false;
-            });
-            thread.Start();
-            
+                MessageBox.Show("로딩 완료");
+                ThreadBool = true;
+            }));      
+            timer.Interval = TimeSpan.FromSeconds(4);
+            timer.Tick += new EventHandler(BarCodeReaderSet_timer_tick);            
+            timer.Start();         
+           
+
         }
 
         public ICommand RunBtnClick { protected get; set; }
@@ -156,6 +175,7 @@ namespace BarcodeReader
             try
             {
                 ReceivedData = serial.ReadLine();
+                HidText = "";
             }
             catch (TimeoutException)
             {
@@ -164,7 +184,7 @@ namespace BarcodeReader
         }
 
         private int DataSearch(string data)
-        {
+        {          
             int x = 0;
             int i = 0;
             TextBlockBarcodeData = "";
@@ -180,8 +200,12 @@ namespace BarcodeReader
                     }));
                     x++;
                 }
-                i++;
-            }           
+                i++;                
+            }            
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(delegate
+            {
+                BarcodeImageSource = barcodeControl.GenBarcode(TextBlockBarcodeData);
+            }));
             if (x < 1)
             {
                 if(data == "")
@@ -194,11 +218,44 @@ namespace BarcodeReader
                     TextBlockBarcodeData = "일치하는 바코드가 없습니다";
                     BarcodeImageSource = null;
                     OnPropertyChangd(nameof(TextBlockBarcodeData));
-                    OnPropertyChangd(nameof(BarcodeImageSource));
+                    OnPropertyChangd(nameof(BarcodeImageSource));                    
                 }
                 
             }
             return x;
+            
+        }
+
+        private void MainWindow_timer_tick(object sender, EventArgs e)
+        {
+            if(CheckBool == true)
+            {
+                string[] subPort = SerialPort.GetPortNames();
+                if (!Port.SequenceEqual(subPort))
+                {
+                    Port = SerialPort.GetPortNames();
+                }
+                try
+                {
+                    serial.Close();
+                    serial.Open();
+                }
+                catch
+                {
+                    MessageBox.Show("포트와의 연결이 끊어졌습니다");
+                    CmdClosemainWindow.Execute(null);
+                }
+            }            
+        }
+        private void BarCodeReaderSet_timer_tick(object sender, EventArgs e)
+        {
+            string[] subPort = SerialPort.GetPortNames();
+            if (!Port.SequenceEqual(subPort))
+            {
+                Port = SerialPort.GetPortNames();
+                GetPort = null;
+                OnPropertyChangd(nameof(CmdOpenMainWindow.CanExecute));
+            }
         }
 
         private DelegateCommand keyStroke;
@@ -255,30 +312,24 @@ namespace BarcodeReader
                 mainWin.DataContext = this;
                 mainWin.Show();
                 barcodeWin?.Close();
-                barcodeWin = null;
-                
+                barcodeWin = null;                
+                timer.Tick -= new EventHandler(BarCodeReaderSet_timer_tick);
+                timer.Tick += new EventHandler(MainWindow_timer_tick);               
+
+
             }
         });
+
+     
 
         private DelegateCommand cmdClosemainWindow;
 
         public DelegateCommand CmdClosemainWindow => cmdClosemainWindow ?? (cmdClosemainWindow = new DelegateCommand()
         {
-            
+
             ExecuteAct = (p) =>
             {
-                if (serial.IsOpen == true)
-                {
-                    try
-                    {
-                        serial.Close();
-                    }
-                    catch (System.IO.IOException)
-                    {
-                        MessageBox.Show("장치와의 연결이 끊어졌습니다");
-                    }
-                    
-                }
+                serial.Close();
                 barcodeWin = new BarcodeReaderSet();
                 barcodeWin.DataContext = this;
                 barcodeWin.Show();
@@ -286,9 +337,20 @@ namespace BarcodeReader
                 mainWin = null;
                 TextBlockProductName = null;
                 TextBlockBarcodeData = null;
+                barcodeImageSource = null;
                 HidText = null;
+                timer.Tick -= new EventHandler(MainWindow_timer_tick);
+                timer.Tick += new EventHandler(BarCodeReaderSet_timer_tick);
+                string[] subPort = SerialPort.GetPortNames();
+                if (!Port.SequenceEqual(subPort))
+                {
+                    Port = SerialPort.GetPortNames();
+                }
+
             }
         });
+
+       
 
         private DelegateCommand cmdShutDown;
 
@@ -299,7 +361,6 @@ namespace BarcodeReader
                 App.Current.Shutdown();
             }
         });
-
        
     }
 }
