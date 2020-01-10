@@ -216,16 +216,16 @@
                 </StackPanel>
                 <StackPanel Width="200" HorizontalAlignment="Center">
                     <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding Port}" SelectedItem="{Binding GetPort}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding PortIndex}"
-                              Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
+                              Width="190" Height="30" HorizontalContentAlignment="Left" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
                     </ComboBox>
                     <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding BaudRateList, Mode=TwoWay}" SelectedItem="{Binding GetBaudRate}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding BaudrateIndex}"
-                              Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
+                              Width="190" Height="30" HorizontalContentAlignment="Left" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
                     </ComboBox>
                     <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding DataBitsList}" SelectedItem="{Binding GetDataBits}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding DatabitsIndex}"
-                              Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
+                              Width="190" Height="30" HorizontalContentAlignment="Left" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
                     </ComboBox>
                     <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding ParityBitsList}" SelectedItem="{Binding GetParityBits}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding ParitybitsIndex}"
-                              Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
+                              Width="190" Height="30" HorizontalContentAlignment="Left" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
                     </ComboBox>
                     <ComboBox Style="{StaticResource ComboBoxStyle}" ItemsSource="{Binding StopBitsList}" SelectedItem="{Binding GetStopBits}" IsHitTestVisible="{Binding DropdownBool}" SelectedIndex="{Binding StopbitsIndex}"
                               Width="190" Height="30" HorizontalContentAlignment="Center" HorizontalAlignment="Left" Margin="0,10,0,0" FontSize="15" FontWeight="Light">
@@ -234,13 +234,13 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,30,0,0" HorizontalAlignment="Center">
                 <StackPanel Width="150">
-                    <Button Style="{StaticResource MyButtonStyle}" Height="30" FontSize="15" Content="Run" Width="105"
-                        Command="{Binding CmdOpenMainWindow}" CommandParameter="{Binding ElementName=root}"
+                    <Button Style="{StaticResource MyButtonStyle}" Height="30" FontSize="15" Content="Shutdown" Width="105" 
+                        Command="{Binding CmdShutDown}" CommandParameter="{Binding ElementName=root}"
                             HorizontalAlignment="Center" FontWeight="Light" />
                 </StackPanel>
                 <StackPanel Width="150">
-                    <Button Style="{StaticResource MyButtonStyle}" Height="30" FontSize="15" Content="Shutdown" Width="105"
-                        Command="{Binding CmdShutDown}" HorizontalAlignment="Center" FontWeight="Light" />
+                    <Button Style="{StaticResource MyButtonStyle}" Height="30" FontSize="15" Content="Run" Width="105"
+                        Command="{Binding CmdOpenMainWindow}" HorizontalAlignment="Center" FontWeight="Light" />
                 </StackPanel>
             </StackPanel>
         </StackPanel>

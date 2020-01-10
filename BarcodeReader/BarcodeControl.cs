@@ -11,7 +11,7 @@ namespace BarcodeReader
 {
     class BarcodeControl
     {
-        public BitmapImage GenBarcode(string content)
+        public BitmapImage GenBarcode(string content, BarcodeFormat format = BarcodeFormat.QR_CODE)
         {
             BarcodeWriter writer = new BarcodeWriter();
 
@@ -22,7 +22,15 @@ namespace BarcodeReader
                 PureBarcode = true,
                 Margin = 10
             };
-            writer.Format = BarcodeFormat.CODE_39;
+            if (format != 0)
+            {
+                writer.Format = format;
+            }
+            else
+            {
+                writer.Format = BarcodeFormat.QR_CODE;
+            }
+            
             Bitmap Barcode = writer.Write(content);
 
             MemoryStream ms = new MemoryStream();

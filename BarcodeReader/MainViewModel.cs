@@ -9,6 +9,9 @@ using System.Windows.Media.Imaging;
 using ZXing;
 using System.Windows.Threading;
 using System.Linq;
+using System.Text;
+using System.IO;
+using System.Collections.ObjectModel;
 
 namespace BarcodeReader
 {    
@@ -17,12 +20,19 @@ namespace BarcodeReader
         public SerialPort serial = new SerialPort();
         public TextControl textControl = new TextControl();
         public BarcodeControl barcodeControl = new BarcodeControl();
-        public DispatcherTimer timer = new DispatcherTimer();        
-        
-        
-        
-        private List<BarcodeDataModel> barcodeDatas = new List<BarcodeDataModel>();
+        public DispatcherTimer timer = new DispatcherTimer();     
 
+        private List<BarcodeDataModel> barcodeDatas = new List<BarcodeDataModel>();
+        private ObservableCollection<string> setList = new ObservableCollection<string>();
+
+        private BarcodeFormat getBarcodeFormat;
+        private List<BarcodeFormat> barcodeFormatList = new List<BarcodeFormat>
+        {
+            BarcodeFormat.QR_CODE,
+            BarcodeFormat.PDF_417,
+            BarcodeFormat.CODE_39,
+            BarcodeFormat.CODE_128
+        };
         private bool threadBool;
         private BitmapImage barcodeImageSource;
         private string hidText;
@@ -77,16 +87,68 @@ namespace BarcodeReader
         private string productBarcodeData;
         private string receivedData;
 
+        public BarcodeFormat GetBarcodeFormat
+        {
+            get { return getBarcodeFormat; }
+            set
+            {
+                getBarcodeFormat = value;
+                OnPropertyChangd(nameof(GetBarcodeFormat));
+                BarcodeImageSource = barcodeControl.GenBarcode(TextBlockBarcodeData, value);
+            }
+        }
+        public List<BarcodeFormat> BarcodeFormatList { get => barcodeFormatList; set { barcodeFormatList = value; OnPropertyChangd(nameof(BarcodeFormatList)); } }
         public bool ThreadBool { get => threadBool; set { threadBool = value; OnPropertyChangd(nameof(ThreadBool)); } }
         public BitmapImage BarcodeImageSource { get => barcodeImageSource; set { barcodeImageSource = value; OnPropertyChangd(nameof(barcodeImageSource)); } }
         public string HidText { get => hidText; set { hidText = value; OnPropertyChangd(nameof(hidText)); } }
         public int PortIndex { get => portIndex; set { portIndex = value; OnPropertyChangd(nameof(PortIndex)); } }
-        public int BaudrateIndex { get => baudrateIndex; set { baudrateIndex = value; OnPropertyChangd(nameof(BaudrateIndex)); } }
+        public int BaudrateIndex
+        {
+            get { return baudrateIndex; }
+            set
+            {
+                baudrateIndex = value;
+                OnPropertyChangd(nameof(BaudrateIndex));
+               
+                
+            }
+        }
         public int DatabitsIndex { get => databitsIndex; set { databitsIndex = value; OnPropertyChangd(nameof(DatabitsIndex)); } }
         public int ParitybitsIndex { get => paritybitsIndex; set { paritybitsIndex = value; OnPropertyChangd(nameof(ParitybitsIndex)); } }
         public int StopbitsIndex { get => stopbitsindex; set { stopbitsindex = value; OnPropertyChangd(nameof(StopbitsIndex)); } }
-        public bool DropdownBool { get => dropdownBool; set { dropdownBool = value; OnPropertyChangd(nameof(DropdownBool)); } }
-        public bool CheckBool { get => checkBool; set { checkBool = value; OnPropertyChangd(nameof(CheckBool)); } }
+        public bool DropdownBool
+        {
+            get { return dropdownBool; }
+            set
+            {
+                dropdownBool = value;
+                OnPropertyChangd(nameof(DropdownBool));
+                if(value == false)
+                {
+                    PortIndex = -1;
+                    BaudrateIndex = -1;
+                    DatabitsIndex = -1;
+                    ParitybitsIndex = -1;
+                    StopbitsIndex = -1;
+                }
+                else
+                {
+                    
+                }
+            }
+        }
+        public bool CheckBool
+        {
+            get { return checkBool; }
+            set
+            {
+                checkBool = value;
+                TxtRead();
+                OnPropertyChangd(nameof(CheckBool));
+               
+            }
+        }
+        public ObservableCollection<string> SetList { get => setList; set { setList = value; OnPropertyChangd(nameof(SetList)); } }
         public List<BarcodeDataModel> BarcodeDatas { get => barcodeDatas; set { barcodeDatas = value; OnPropertyChangd(nameof(BarcodeDatas)); } }
         public string[] Port
         {
@@ -116,7 +178,7 @@ namespace BarcodeReader
             {
                 receivedData = value;
                 OnPropertyChangd(nameof(ReceivedData));
-                DataSearch(value);
+                DataSearch(value, GetBarcodeFormat);
             }
         }        
 
@@ -129,24 +191,20 @@ namespace BarcodeReader
         {
             Port = SerialPort.GetPortNames();
             ThreadBool = false;
-            CheckBool = true;
+            CheckBool = true;                           
             PortIndex = -1;
-            BaudrateIndex = 5;
-            DatabitsIndex = 3;
-            ParitybitsIndex = 0;
-            StopbitsIndex = 0;
+            TxtRead();
             serial.NewLine = "\r";            
             serial.DataReceived += new SerialDataReceivedEventHandler(DataReceived);
-            Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(delegate
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(delegate
             {
-                BarcodeDatas = textControl.TxtControl();
-                MessageBox.Show("로딩 완료");
+                BarcodeDatas = textControl.TxtControl();                
                 ThreadBool = true;
             }));      
             timer.Interval = TimeSpan.FromSeconds(4);
             timer.Tick += new EventHandler(BarCodeReaderSet_timer_tick);            
-            timer.Start();         
-           
+            timer.Start();
+                 
 
         }
 
@@ -168,10 +226,12 @@ namespace BarcodeReader
             serial.Parity = parityBits;
             serial.StopBits = stopBits;
             serial.Open();
+            serial.DiscardInBuffer();   
         }
 
         private void DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
+            
             try
             {
                 ReceivedData = serial.ReadLine();
@@ -183,12 +243,30 @@ namespace BarcodeReader
             }
         }
 
-        private int DataSearch(string data)
+        private void TxtRead()
+        {
+            SetList.Clear();
+            StreamReader sr = new StreamReader(AppDomain.CurrentDomain.BaseDirectory + @"StartupSetting.txt");            
+            while (sr.Peek() != -1)
+            {
+                string data = sr.ReadLine();
+                SetList.Add(data);
+            }
+            PortIndex = Convert.ToInt32(SetList[0]);
+            BaudrateIndex = Convert.ToInt32(SetList[1]);
+            DatabitsIndex = Convert.ToInt32(SetList[2]);
+            ParitybitsIndex = Convert.ToInt32(SetList[3]);
+            StopbitsIndex = Convert.ToInt32(SetList[4]);
+            sr.Close();
+
+        }
+
+        private int DataSearch(string data,BarcodeFormat format)
         {          
             int x = 0;
             int i = 0;
-            TextBlockBarcodeData = "";
-            TextBlockProductName = "";
+            TextBlockBarcodeData = string.Empty;
+            TextBlockProductName = string.Empty;
             foreach (var items in BarcodeDatas)
             {
                 if ((BarcodeDatas[i].BarcodeData) == data)
@@ -197,18 +275,26 @@ namespace BarcodeReader
                     {
                         TextBlockBarcodeData = BarcodeDatas[i].BarcodeData;
                         TextBlockProductName = BarcodeDatas[i].ProductName;
+                        
                     }));
                     x++;
+                    break;
                 }
-                i++;                
-            }            
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(delegate
+                i++;
+            }
+            if (!string.IsNullOrEmpty(textBlockBarcodeData))
             {
-                BarcodeImageSource = barcodeControl.GenBarcode(TextBlockBarcodeData);
-            }));
+                BitmapImage a = barcodeControl.GenBarcode(TextBlockBarcodeData, format);
+                a.Freeze();
+                BarcodeImageSource = a;
+            }            
+            if (string.IsNullOrEmpty(TextBlockBarcodeData))
+            {
+
+            }
             if (x < 1)
             {
-                if(data == "")
+                if(data.Equals(string.Empty))
                 {
                     TextBlockProductName = null;
                     TextBlockBarcodeData = null;
@@ -219,12 +305,20 @@ namespace BarcodeReader
                     BarcodeImageSource = null;
                     OnPropertyChangd(nameof(TextBlockBarcodeData));
                     OnPropertyChangd(nameof(BarcodeImageSource));                    
-                }
-                
+                }              
+                               
             }
             return x;
             
         }
+
+        private void LineChanger(string newText, int line_to_edit)
+        {
+            string[] arrLine = File.ReadAllLines(AppDomain.CurrentDomain.BaseDirectory + @"StartupSetting.txt", Encoding.Default);
+            arrLine[line_to_edit - 1] = newText;
+            File.WriteAllLines(AppDomain.CurrentDomain.BaseDirectory + @"StartupSetting.txt", arrLine, Encoding.Default); 
+            
+        }        
 
         private void MainWindow_timer_tick(object sender, EventArgs e)
         {
@@ -265,7 +359,7 @@ namespace BarcodeReader
             
             ExecuteAct = (p) =>
             {
-                DataSearch(HidText);                            
+                DataSearch(HidText, GetBarcodeFormat);                            
             }
         });
 
@@ -279,20 +373,12 @@ namespace BarcodeReader
                 if (CheckBool == false)
                 {
                     DropdownBool = false;
-                    PortIndex = -1;
-                    BaudrateIndex = -1;
-                    DatabitsIndex = -1;
-                    ParitybitsIndex = -1;
-                    StopbitsIndex = -1;
+                  
                     return true;
                 }
                 else
-                {
-                    
-                    BaudrateIndex = 5;
-                    DatabitsIndex = 3;
-                    ParitybitsIndex = 0;
-                    StopbitsIndex = 0;
+                {                   
+
                     bool a = false;
                     DropdownBool = true;
                     if (GetPort != null && GetBaudRate != null)
@@ -304,6 +390,11 @@ namespace BarcodeReader
             },
             ExecuteAct = (p) =>
             {
+                LineChanger(PortIndex.ToString(), 1);
+                LineChanger(BaudrateIndex.ToString(), 2);
+                LineChanger(databitsIndex.ToString(), 3);
+                LineChanger(ParitybitsIndex.ToString(), 4);
+                LineChanger(stopbitsindex.ToString(), 5);
                 if (CheckBool == true)
                 {
                     OpenComPort(GetPort, Convert.ToInt32(getBaudRate), GetDataBits, GetparityBits, GetStopBits);
@@ -361,6 +452,8 @@ namespace BarcodeReader
                 App.Current.Shutdown();
             }
         });
-       
+
+
+        
     }
 }
