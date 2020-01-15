@@ -15,13 +15,6 @@ namespace BarcodeReader
         {
             BarcodeWriter writer = new BarcodeWriter();
 
-            writer.Options = new ZXing.Common.EncodingOptions
-            {
-                Width = 700,
-                Height = 120,
-                PureBarcode = true,
-                Margin = 10
-            };
             if (format != 0)
             {
                 writer.Format = format;
@@ -30,7 +23,27 @@ namespace BarcodeReader
             {
                 writer.Format = BarcodeFormat.QR_CODE;
             }
-            
+            if(format == BarcodeFormat.PDF_417)
+            {
+                writer.Options = new ZXing.Common.EncodingOptions
+                {
+                    PureBarcode = true,
+                    Height = 120,
+                    Width = 240
+                };
+            }
+            else
+            {
+                writer.Options = new ZXing.Common.EncodingOptions
+                {
+                    PureBarcode = true,
+                    Height = 120,
+                    Width = 700
+
+                };
+            }
+           
+
             Bitmap Barcode = writer.Write(content);
 
             MemoryStream ms = new MemoryStream();
